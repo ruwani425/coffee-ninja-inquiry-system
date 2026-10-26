@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Coffee, AlertCircle, Loader2, KeyRound } from 'lucide-react';
+import { Coffee, AlertCircle, Loader2, Eye, EyeOff, Lock, Mail, Info } from 'lucide-react';
 
 export const LoginPage = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('coffee_ninja_saved_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberEmail(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,17 +26,16 @@ export const LoginPage = () => {
 
     try {
       await login(email, password);
+      if (rememberEmail) {
+        localStorage.setItem('coffee_ninja_saved_email', email);
+      } else {
+        localStorage.removeItem('coffee_ninja_saved_email');
+      }
     } catch (err) {
-      setError(err.message || 'Login failed. Please verify credentials.');
+      setError(err.message || 'Invalid credentials. Please verify your email and password.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const setPresetUser = (presetEmail, presetPass) => {
-    setEmail(presetEmail);
-    setPassword(presetPass);
-    setError('');
   };
 
   return (
@@ -42,46 +51,77 @@ export const LoginPage = () => {
 
         {error && (
           <div className="alert alert-danger" role="alert" style={{ marginBottom: '1.25rem' }}>
-            <AlertCircle size={18} />
+            <AlertCircle size={18} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate={false}>
           <div className="form-group">
             <label className="form-label" htmlFor="login-email">
               Staff Email Address
             </label>
-            <input
-              id="login-email"
-              type="email"
-              className="form-input"
-              placeholder="e.g. sarah@coffeeninja.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <div className="input-with-icon">
+              <Mail size={16} className="input-icon-left" />
+              <input
+                id="login-email"
+                type="email"
+                className="form-input with-left-icon"
+                placeholder="name@coffeeninja.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="login-password">
-              Password
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label className="form-label" htmlFor="login-password" style={{ margin: 0 }}>
+                Password
+              </label>
+            </div>
+            <div className="input-with-icon">
+              <Lock size={16} className="input-icon-left" />
+              <input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                className="form-input with-left-icon with-right-icon"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="input-icon-btn-right"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1rem 0 1.25rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.84rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(e) => setRememberEmail(e.target.checked)}
+                style={{ accentColor: 'var(--coffee-700)', cursor: 'pointer' }}
+              />
+              <span>Remember email</span>
             </label>
-            <input
-              id="login-password"
-              type="password"
-              className="form-input"
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
           </div>
 
           <button
             type="submit"
             className="btn-primary"
-            style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
+            style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', fontSize: '0.95rem' }}
             disabled={loading}
             id="login-submit-btn"
           >
@@ -96,42 +136,20 @@ export const LoginPage = () => {
           </button>
         </form>
 
-        {/* Evaluation Helper: Quick Seeded Accounts Switcher */}
-        <div className="preset-accounts">
-          <div className="preset-title">⚡ Quick Fill Seeded Accounts for Testing</div>
-          <div className="preset-buttons">
-            <button
-              type="button"
-              className="preset-btn"
-              onClick={() => setPresetUser('sarah@coffeeninja.com', 'NinjaPass123!')}
-              id="preset-sarah"
-            >
-              <span className="name">Sarah Jenkins</span>
-              <span className="role">Agent (Specialist)</span>
-            </button>
-
-            <button
-              type="button"
-              className="preset-btn"
-              onClick={() => setPresetUser('alex@coffeeninja.com', 'NinjaPass123!')}
-              id="preset-alex"
-            >
-              <span className="name">Alex Rivera</span>
-              <span className="role">Agent (Specialist)</span>
-            </button>
-
-            <button
-              type="button"
-              className="preset-btn"
-              onClick={() => setPresetUser('elena@coffeeninja.com', 'NinjaBoss123!')}
-              id="preset-elena"
-              style={{ gridColumn: 'span 2' }}
-            >
-              <span className="name">Elena Rostova</span>
-              <span className="role">Supervisor (Full Team Access)</span>
-            </button>
+        {/* Discrete, standard collapsible disclosure for assessment reviewers */}
+        <details className="demo-notes-disclosure">
+          <summary>
+            <Info size={14} />
+            <span>Staff Test Accounts Info</span>
+          </summary>
+          <div className="demo-notes-content">
+            <p>For testing, seeded accounts can be found in <code>README.md</code>:</p>
+            <ul>
+              <li><strong>Agent</strong>: <code>sarah@coffeeninja.com</code> (or <code>alex@coffeeninja.com</code>)</li>
+              <li><strong>Supervisor</strong>: <code>elena@coffeeninja.com</code></li>
+            </ul>
           </div>
-        </div>
+        </details>
       </div>
     </div>
   );
